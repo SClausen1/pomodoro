@@ -1,80 +1,49 @@
+mod consts;
+
 use clap::Parser;
-use std::time::{Duration, SystemTime};
-use std::thread::sleep;
 use indicatif::{ProgressBar, ProgressStyle};
+use pomodoro::Timer;
+use std::thread::sleep;
+use std::time::Duration;
 
-
-
-static START_TEXT : &str = "\x1b[91m
-________ ________  ________  ___  ___  ________  _______   ________          ________  ________ 
-|\\  _____\\\\   __  \\|\\   ____\\|\\  \\|\\  \\|\\   ____\\|\\  ___ \\ |\\   ___ \\        |\\   __  \\|\\  _____\\
-\\ \\  \\__/\\ \\  \\|\\  \\ \\  \\___|\\ \\  \\\\\\  \\ \\  \\___|\\ \\   __/|\\ \\  \\_|\\ \\       \\ \\  \\|\\  \\ \\  \\__/ 
- \\ \\   __\\\\ \\  \\\\\\  \\ \\  \\    \\ \\  \\\\\\  \\ \\_____  \\ \\  \\_|/_\\ \\  \\ \\\\ \\       \\ \\   __  \\ \\   __\\
-  \\ \\  \\_| \\ \\  \\\\\\  \\ \\  \\____\\ \\  \\\\\\  \\|____|\\  \\ \\  \\_|\\ \\ \\  \\_\\\\ \\       \\ \\  \\ \\  \\ \\  \\_|
-   \\ \\__\\   \\ \\_______\\ \\_______\\ \\_______\\____\\_\\  \\ \\_______\\ \\_______\\       \\ \\__\\ \\__\\ \\__\\ 
-    \\|__|    \\|_______|\\|_______|\\|_______|\\_________\\|_______|\\|_______|        \\|__|\\|__|\\|__| 
-                                          \\|_________|                                                                                                                                                                                                                         
-\x1b[0m
-";
-static END_TEXT : &str= "\x1b[92m
-________  ___  ___  ___  ___       ___       _______   ________      
-|\\   ____\\|\\  \\|\\  \\|\\  \\|\\  \\     |\\  \\     |\\  ___ \\ |\\   ___  \\    
-\\ \\  \\___|\\ \\  \\\\\\  \\ \\  \\ \\  \\    \\ \\  \\    \\ \\   __/|\\ \\  \\\\ \\  \\   
- \\ \\  \\    \\ \\   __  \\ \\  \\ \\  \\    \\ \\  \\    \\ \\  \\_|/_\\ \\  \\\\ \\  \\  
-  \\ \\  \\____\\ \\  \\ \\  \\ \\  \\ \\  \\____\\ \\  \\____\\ \\  \\_|\\ \\ \\  \\\\ \\  \\ 
-   \\ \\_______\\ \\__\\ \\__\\ \\__\\ \\_______\\ \\_______\\ \\_______\\ \\__\\\\ \\__\\
-    \\|_______|\\|__|\\|__|\\|__|\\|_______|\\|_______|\\|_______|\\|__| \\|__|
-                                                                      
-                                                                      
-\x1b[0m                                                                                                                                                                                                                                                                                                                                                           
-";
-
-
-/// Search for a pattern in a file and display the lines that contain it.
+/// Easy CLI Pomodoro Timer.
 #[derive(Parser)]
 struct Cli {
     /// Number of minutes to time
-    #[arg(short, long, default_value_t=50)]
-    minutes : u64,
+    #[arg(short, long, default_value_t = 50)]
+    minutes: u64,
 
+    /// start the timer
     #[arg(short, long)]
-    start : bool
-
+    start: bool,
 }
 
 fn main() {
-    let start_time = SystemTime::now();
     let args = Cli::parse();
     let minutes = args.minutes;
+    let timer = Timer::new(minutes);
     let mut done = false;
     let start = args.start;
 
-    if start == true{
+    if start == true {
         let pb = ProgressBar::new(minutes);
-        pb.set_style(ProgressStyle::with_template("{spinner:.blue} {bar:70.cyan/red} {pos:>7}/{len:7} {msg}")
-        .unwrap()
-        .progress_chars("##-"));
+        pb.set_style(
+            ProgressStyle::with_template(
+                "{spinner:.blue} {bar:70.cyan/red} {pos:>7}/{len:7} {msg}",
+            )
+            .unwrap()
+            .progress_chars("##-"),
+        );
 
-        println!("{}", START_TEXT);
+        println!("{}", consts::START_TEXT);
         while !done {
-            let elapsed_time = SystemTime::now().duration_since(start_time).expect("failed to calculate elapsed time") ;
-            let elapsed_minutes = elapsed_time.as_secs() / 60 ;
-            let time_remaining = minutes - elapsed_minutes;
-            if time_remaining == 0{
+            let elapsed_minutes = timer.get_elapsed_minutes();
+            if minutes == elapsed_minutes {
                 done = true
             }
-            pb.set_position( elapsed_minutes);
+            pb.set_position(elapsed_minutes);
             sleep(Duration::from_millis(50));
-        
-       
         }
-        pb.finish_with_message(END_TEXT);
-
+        pb.finish_with_message(consts::END_TEXT);
     }
 }
-
-
-// fn main() {
-//     let args = std::env::args()
-//     let time = args.nth(1).expect("no time given")
-// }
